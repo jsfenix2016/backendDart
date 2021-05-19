@@ -1,12 +1,8 @@
-
 class PetType {
   final int IdPet;
   final String Name;
-  
 
-  PetType(
-      {this.IdPet,
-      this.Name});
+  PetType({this.IdPet, this.Name});
 
   PetType.fromJson(Map<String, dynamic> json)
       : IdPet = json['id'],

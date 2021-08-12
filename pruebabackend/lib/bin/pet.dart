@@ -2,7 +2,7 @@ class Pet {
   final int IdPet;
   final int IdUser;
   final String NamePet;
-  final DateTime BirthDate;
+  final String BirthDate;
   final int IdRace;
   final String Image_1;
   final String Image_2;
@@ -10,9 +10,10 @@ class Pet {
   final String Image_4;
   final int IdPettype;
   final String Description;
+
+  final int IsAvailable;
   final String Genero;
-  final bool IsAvailable;
-  final bool IsTrayed;
+  final int IsTrayed;
 
   Pet(
       {this.IdPet,
@@ -25,9 +26,9 @@ class Pet {
       this.Image_3,
       this.Image_4,
       this.IdPettype,
-      this.Description, 
-      this.Genero, 
+      this.Description,
       this.IsAvailable,
+      this.Genero,
       this.IsTrayed});
 
   Pet.fromJson(Map<String, dynamic> json)
@@ -42,8 +43,8 @@ class Pet {
         Image_4 = json['image_4'],
         IdPettype = json['idPettype'],
         Description = json['description'],
-        Genero = json['genero'],
         IsAvailable = json['isAvailable'],
+        Genero = json['genero'],
         IsTrayed = json['isTrayed'];
 
   Map<String, dynamic> toJson() => {
@@ -58,8 +59,8 @@ class Pet {
         'image_4': Image_4,
         'idPettype': IdPettype,
         'description': Description,
-        'genero': Genero,
         'isAvailable': IsAvailable,
+        'genero': Genero,
         'isTrayed': IsTrayed
       };
 }

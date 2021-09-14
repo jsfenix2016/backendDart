@@ -34,7 +34,7 @@ Future<List<FileSystemEntity>> dirContents(Directory dir) {
 }
 
 Future main() async {
-  var server = await HttpServer.bind(InternetAddress.loopbackIPv4, 8089);
+  var server = await HttpServer.bind(InternetAddress.loopbackIPv4, 8088);
   print('Serving at ${server.address}:${server.port}');
 
   server.listen((HttpRequest request) async {
@@ -45,24 +45,17 @@ Future main() async {
       password: 'Js1234567/',
       db: 'bdPestNewVersion',
     ));
-    // var filet = await File('bin/indexImg.html');
 
     switch (request.uri.path) {
       case '/imageSa':
         if (request.method == 'GET') {
           var imgName = request.uri.queryParameters['imgName'];
-          // var idUser = request.uri.queryParameters['idUser'];
 
-          // final myDir =  Directory('dir/ImageUser/47/${imgName}.png');
           final myDir = Directory(imgName);
 
-          // final myDir = Directory('dir/ImageUser/50/' + imgName+'.png');
           request.response.headers.contentType = ContentType.parse('image/png');
 
-          // if (await Directory(myDir.path).exists()) {
           var filet = await File(myDir.path);
-
-          // Future fileTemp = filet.readAsBytes();
 
           final bytes = filet.readAsBytesSync();
 
@@ -85,8 +78,6 @@ Future main() async {
           Uint8List _bytesImage;
 
           _bytesImage = Base64Decoder().convert(image);
-
-          // var file =  File('dir/ImageUser/$idUser.png');
 
           final myDir2 = Directory('dir/ImageUser/$idUser/');
           final file = File(join(myDir2.uri.path, '${imgName}.png'));
@@ -127,27 +118,27 @@ Future main() async {
       //     await request.response.close();
       //   }
       //   break;
-      case '/imageWeb':
-        if (request.method == 'GET') {
-          var l = await dirContents(Directory('dir/ImageUser/50'));
+      // case '/imageWeb':
+      //   if (request.method == 'GET') {
+      //     var l = await dirContents(Directory('dir/ImageUser/50'));
 
-          // request.response
-          //   ..headers.set('Content-Type', lookupMimeType(l.first.path));
-          var imgName = request.uri.queryParameters['imgName'];
+      //     // request.response
+      //     //   ..headers.set('Content-Type', lookupMimeType(l.first.path));
+      //     var imgName = request.uri.queryParameters['imgName'];
 
-          final myDir = Directory('dir/ImageUser/50/12.png');
+      //     final myDir = Directory('dir/ImageUser/50/12.png');
 
-          request.response.headers.contentType = ContentType.parse('image/png');
+      //     request.response.headers.contentType = ContentType.parse('image/png');
 
-          var filet = await File(myDir.path);
-          var fileStream = filet.openRead();
+      //     var filet = await File(myDir.path);
+      //     var fileStream = filet.openRead();
 
-          await request.response.addStream(fileStream);
+      //     await request.response.addStream(fileStream);
 
-          await request.response.close();
-          // ShowWebImage().showImageInWeb(l);
-        }
-        break;
+      //     await request.response.close();
+      //     // ShowWebImage().showImageInWeb(l);
+      //   }
+      //   break;
       case '/Login':
         if (request.method == 'POST') {
           try {

@@ -49,7 +49,7 @@ class PetQuery {
     }
   }
 
-  Future<String> PetPost(MySqlConnection connection, Map data) async {
+  Future<String> PetRacePost(MySqlConnection connection, Map data) async {
     try {
       var idType = data['idType'];
 
@@ -60,54 +60,6 @@ class PetQuery {
         idType = row[0];
         dto.add(User(IdUser: row[0], Email: row[1], Image_1: row[5]));
       }
-
-      final jsonResponse = codec.encode(dto);
-      return ('$jsonResponse');
-    } catch (error) {
-      print(error.toString());
-      return ('jsonResponse: $error');
-    }
-  }
-
-/*nuevo*/
-  Future<String> PetLike(MySqlConnection connection, Map data) async {
-    try {
-      var idUser = data['idUser'];
-      var idPet = data['idPet'];
-      var idOtherPet = data['idOtherPet'];
-      var matchUser = data['matchUser'];
-
-      var a = await connection
-          .query('CALL SP_InsertLike($idUser, $idPet,$matchUser)');
-
-      var dto = <User>[];
-      // for (var row in a) {
-      //   idType = row[0];
-      //   dto.add(User(IdUser: row[0], Email: row[1], Image_1: row[5]));
-      // }
-
-      final jsonResponse = codec.encode(dto);
-      return ('$jsonResponse');
-    } catch (error) {
-      print(error.toString());
-      return ('jsonResponse: $error');
-    }
-  }
-
-  Future<String> SearchPetLike(MySqlConnection connection, Map data) async {
-    try {
-      var idUser = data['idUser'];
-      var idPet = data['idPet'];
-      var idOtherPet = data['idOtherPet'];
-      var matchUser = data['matchUser'];
-
-      var a = await connection.query('CALL SP_consultLike()');
-
-      var dto = <User>[];
-      // for (var row in a) {
-      //   idType = row[0];
-      //   dto.add(User(IdUser: row[0], Email: row[1], Image_1: row[5]));
-      // }
 
       final jsonResponse = codec.encode(dto);
       return ('$jsonResponse');
@@ -200,5 +152,65 @@ class PetQuery {
 
     final jsonResponse = codec.encode(idUser);
     return ('$jsonResponse');
+  }
+
+  /*------   LIKE   -------*/
+  Future<String> PetSaveLike(MySqlConnection connection, Map data) async {
+    try {
+      var idUser = data['idUser'];
+      var idPet = data['idPet'];
+      var idOtherPet = data['idOtherPet'];
+      var matchUser = data['matchUser'];
+
+      var save = await connection
+          .query('CALL SP_InsertLike($idUser, $idPet,$matchUser)');
+
+      var dto = <User>[];
+      // for (var row in a) {
+      //   idType = row[0];
+      //   dto.add(User(IdUser: row[0], Email: row[1], Image_1: row[5]));
+      // }
+
+      final jsonResponse = codec.encode(dto);
+      return ('$jsonResponse');
+    } catch (error) {
+      print(error.toString());
+      return ('jsonResponse: $error');
+    }
+  }
+
+  Future<String> AllPetLike(MySqlConnection connection, Map data) async {
+    try {
+      var idUser = data['idUser'];
+
+      var AllPetLike = await connection.query('CALL SP_consultLike($idUser)');
+
+      var dto = <Pet>[];
+      for (var row in AllPetLike) {
+        dto.add(Pet(
+            IdPet: row[0],
+            IdUser: row[1],
+            NamePet: row[2],
+            BirthDate:
+                "${DateTime.parse(row[3]).year.toString()}-${DateTime.parse(row[3]).month.toString().padLeft(2, '0')}-${DateTime.parse(row[3]).day.toString().padLeft(2, '0')}",
+            IdRace: row[4],
+            Image_1: row[5],
+            Image_2: row[6],
+            Image_3: row[7],
+            Image_4: row[8],
+            IdPettype: row[9],
+            Description: row[10],
+            IsAvailable: row[11],
+            Genero: row[12],
+            IsTrayed: row[13]));
+      }
+
+      final jsonResponse = codec.encode(dto);
+
+      return ('${jsonResponse}');
+    } catch (error) {
+      print(error.toString());
+      return ('jsonResponse: $error');
+    }
   }
 }

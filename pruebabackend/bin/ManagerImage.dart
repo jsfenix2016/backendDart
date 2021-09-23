@@ -48,3 +48,41 @@ class ManagerImage {
     }
   }
 }
+
+// --- esto en main si se quiere usar :p --//
+// case '/PeliWeb':
+      //   if (request.method == 'GET') {
+      //     final myDir = Directory(
+      //         'dir/ImageUser/slam-dunk-1993-1996-subbed-episodio-072.mp4');
+
+      //     request.response.headers.contentType = ContentType.parse('video/mp4');
+
+      //     var filet = await File(myDir.path);
+      //     var fileStream = filet.openRead();
+
+      //     await request.response.addStream(fileStream);
+
+      //     await request.response.close();
+      //   }
+      //   break;
+      // case '/imageWeb':
+      //   if (request.method == 'GET') {
+      //     var l = await dirContents(Directory('dir/ImageUser/50'));
+
+      //     // request.response
+      //     //   ..headers.set('Content-Type', lookupMimeType(l.first.path));
+      //     var imgName = request.uri.queryParameters['imgName'];
+
+      //     final myDir = Directory('dir/ImageUser/50/12.png');
+
+      //     request.response.headers.contentType = ContentType.parse('image/png');
+
+      //     var filet = await File(myDir.path);
+      //     var fileStream = filet.openRead();
+
+      //     await request.response.addStream(fileStream);
+
+      //     await request.response.close();
+      //     // ShowWebImage().showImageInWeb(l);
+      //   }
+      //   break;

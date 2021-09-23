@@ -1,37 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
-
 import 'dart:io';
-
 import 'dart:typed_data';
-
-import 'package:mime/mime.dart';
 import 'package:mysql1/mysql1.dart';
 import 'package:path/path.dart';
-import 'package:pruebabackend/bin/pet.dart';
-import 'package:pruebabackend/bin/pettype.dart';
 import 'package:pruebabackend/bin/user.dart';
-
-import 'package:pruebabackend/bin/userRegister.dart';
-
 import 'PetQuery.dart';
 import 'UserQuery.dart';
-import 'showWeb.dart';
 
-//import 'dart:convert' as JSON;
-
-//final File file = File('indexImg.html');
 JsonCodec codec = JsonCodec();
 var connection;
-Future<List<FileSystemEntity>> dirContents(Directory dir) {
-  var files = <FileSystemEntity>[];
-  var completer = Completer<List<FileSystemEntity>>();
-  var lister = dir.list(recursive: false);
-  lister.listen((file) => files.add(file),
-      // should also register onError
-      onDone: () => completer.complete(files));
-  return completer.future;
-}
 
 Future main() async {
   var server = await HttpServer.bind(InternetAddress.loopbackIPv4, 8088);
@@ -68,9 +46,7 @@ Future main() async {
         }
 
         if (request.method == 'POST') {
-          var content = await utf8.decoder.bind(request).join(); /*2*/
-          var data = jsonDecode(content) as Map; /*3*/
-
+          var data = await methodData(request);
           var idUser = data['idUser'];
           var imgName = data['user'];
           var image = data['image'];
@@ -103,51 +79,13 @@ Future main() async {
           break;
         }
         break;
-      // case '/PeliWeb':
-      //   if (request.method == 'GET') {
-      //     final myDir = Directory(
-      //         'dir/ImageUser/slam-dunk-1993-1996-subbed-episodio-072.mp4');
 
-      //     request.response.headers.contentType = ContentType.parse('video/mp4');
-
-      //     var filet = await File(myDir.path);
-      //     var fileStream = filet.openRead();
-
-      //     await request.response.addStream(fileStream);
-
-      //     await request.response.close();
-      //   }
-      //   break;
-      // case '/imageWeb':
-      //   if (request.method == 'GET') {
-      //     var l = await dirContents(Directory('dir/ImageUser/50'));
-
-      //     // request.response
-      //     //   ..headers.set('Content-Type', lookupMimeType(l.first.path));
-      //     var imgName = request.uri.queryParameters['imgName'];
-
-      //     final myDir = Directory('dir/ImageUser/50/12.png');
-
-      //     request.response.headers.contentType = ContentType.parse('image/png');
-
-      //     var filet = await File(myDir.path);
-      //     var fileStream = filet.openRead();
-
-      //     await request.response.addStream(fileStream);
-
-      //     await request.response.close();
-      //     // ShowWebImage().showImageInWeb(l);
-      //   }
-      //   break;
       case '/Login':
         if (request.method == 'POST') {
           try {
-            var content = await utf8.decoder.bind(request).join(); /*2*/
-            var data = jsonDecode(content) as Map; /*3*/
+            var data = await methodData(request);
 
-            var login = UserQuery();
-
-            var responseLogin = await login.Login(connection, data);
+            var responseLogin = await UserQuery().Login(connection, data);
 
             await request.response.write(responseLogin.toString());
           } catch (error) {
@@ -179,9 +117,7 @@ Future main() async {
         if (request.method == 'GET') {
           var a = await connection.query('CALL SP_consultRegister()');
         } else if (request.method == 'POST') {
-          var content = await utf8.decoder.bind(request).join(); /*2*/
-          var data = jsonDecode(content) as Map; /*3*/
-
+          var data = await methodData(request);
           var user = data['email'];
           var pass = data['pass'];
           var terms = data['terms'];
@@ -224,9 +160,9 @@ Future main() async {
           await request.response.write(File('indexImg.html'));
         } else if (request.method == 'POST') {
           try {
-            var content = await utf8.decoder.bind(request).join(); /*2*/
-            var data = jsonDecode(content) as Map; /*3*/
-
+            // var content = await utf8.decoder.bind(request).join(); /*2*/
+            // var data = jsonDecode(content) as Map; /*3*/
+            var data = await methodData(request);
             var idUser = data['idUser'];
 
             // code that might throw an exception
@@ -262,14 +198,20 @@ Future main() async {
           // await request.response.write('${a}');
           // await connection.close();
         } else if (request.method == 'POST') {
-          var content = await utf8.decoder.bind(request).join(); /*2*/
-          var data = jsonDecode(content) as Map; /*3*/
+          // var content = await utf8.decoder.bind(request).join(); /*2*/
+          // var data = jsonDecode(content) as Map; /*3*/
 
-          var a = await user.PetPost(connection, data);
+          try {
+            var data = await methodData(request);
+            var a = await user.PetRacePost(connection, data);
 
-          final jsonResponse = codec.encode(a);
+            final jsonResponse = codec.encode(a);
 
-          await request.response.write('$jsonResponse');
+            await request.response.write('$jsonResponse');
+          } catch (error) {
+            print(error.toString());
+            await request.response.write('jsonResponse: $error');
+          }
         } else if (request.method == 'PUT') {}
         break;
       case '/dateTime':
@@ -302,14 +244,15 @@ Future main() async {
       case '/consultPet':
         var pet = PetQuery();
         if (request.method == 'GET') {
-          var content = await utf8.decoder.bind(request).join(); /*2*/
+          // var content = await utf8.decoder.bind(request).join(); /*2*/
           // var data = jsonDecode(content) as Map; /*3*/
           var a = await pet.AllPet(connection);
           await request.response.write('$a');
           await connection.close();
         } else if (request.method == 'POST') {
-          var content = await utf8.decoder.bind(request).join(); /*2*/
-          var dataa = jsonDecode(content) as Map; /*3*/
+          // var content = await utf8.decoder.bind(request).join(); /*2*/
+          // var dataa = jsonDecode(content) as Map; /*3*/
+          var data = await methodData(request);
           var a = await pet.AllPet(connection);
           await request.response.write('$a');
           await connection.close();
@@ -322,17 +265,18 @@ Future main() async {
           // await request.response.write('$a');
 
         } else if (request.method == 'POST') {
-          var content = await utf8.decoder.bind(request).join(); /*2*/
-          var data = jsonDecode(content) as Map; /*3*/
+          // var content = await utf8.decoder.bind(request).join(); /*2*/
+          // var data = jsonDecode(content) as Map; /*3*/
+          var data = await methodData(request);
           var a = await pet.PetSave(connection, data);
           await request.response.write('$a');
 
           await connection.close();
         } else if (request.method == 'PUT') {
           try {
-            var content = await utf8.decoder.bind(request).join(); /*2*/
-            var data = jsonDecode(content) as Map; /*3*/
-
+            // var content = await utf8.decoder.bind(request).join(); /*2*/
+            // var data = jsonDecode(content) as Map; /*3*/
+            var data = await methodData(request);
             var namePet = data['NamePet'];
             var birthDate = data['BirthDate'];
             var idRace = data['IdRace'];
@@ -360,8 +304,9 @@ Future main() async {
           await connection.close();
         } else if (request.method == 'DELETE') {
           try {
-            var content = await utf8.decoder.bind(request).join(); /*2*/
-            var data = jsonDecode(content) as Map; /*3*/
+            //  var content = await utf8.decoder.bind(request).join(); /*2*/
+            var data =
+                await methodData(request); //jsonDecode(content) as Map; /*3*/
 
             var idPet = data['idPet'];
 
@@ -386,4 +331,20 @@ Future main() async {
     }
     await request.response.close();
   });
+}
+
+Future<Map> methodData(HttpRequest request) async {
+  var content = await utf8.decoder.bind(request).join(); /*2*/
+  return jsonDecode(content) as Map; /*3*/
+}
+
+//-- esto es para buscar la lista de archivos que se encuentran en el directorio especifico --- //
+Future<List<FileSystemEntity>> dirContents(Directory dir) {
+  var files = <FileSystemEntity>[];
+  var completer = Completer<List<FileSystemEntity>>();
+  var lister = dir.list(recursive: false);
+  lister.listen((file) => files.add(file),
+      // should also register onError
+      onDone: () => completer.complete(files));
+  return completer.future;
 }

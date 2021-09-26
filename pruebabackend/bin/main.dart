@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:mysql1/mysql1.dart';
 import 'package:path/path.dart';
 import 'package:pruebabackend/bin/user.dart';
+import 'ManagerImage.dart';
 import 'PetQuery.dart';
 import 'UserQuery.dart';
 
@@ -12,7 +13,7 @@ JsonCodec codec = JsonCodec();
 var connection;
 
 Future main() async {
-  var server = await HttpServer.bind(InternetAddress.loopbackIPv4, 8088);
+  var server = await HttpServer.bind(InternetAddress.loopbackIPv4, 8089);
   print('Serving at ${server.address}:${server.port}');
 
   server.listen((HttpRequest request) async {
@@ -27,53 +28,19 @@ Future main() async {
     switch (request.uri.path) {
       case '/imageSa':
         if (request.method == 'GET') {
-          var imgName = request.uri.queryParameters['imgName'];
+          var img = ManagerImage().searchImage(request);
 
-          final myDir = Directory(imgName);
-
-          request.response.headers.contentType = ContentType.parse('image/png');
-
-          var filet = await File(myDir.path);
-
-          final bytes = filet.readAsBytesSync();
-
-          var img64 = base64Encode(bytes);
-
-          await request.response.write('${img64}');
-
+          await request.response.write(img);
           await connection.close();
           break;
         }
 
         if (request.method == 'POST') {
           var data = await methodData(request);
-          var idUser = data['idUser'];
-          var imgName = data['user'];
-          var image = data['image'];
+          var a = ManagerImage().saveImage(data);
 
-          Uint8List _bytesImage;
-
-          _bytesImage = Base64Decoder().convert(image);
-
-          final myDir2 = Directory('dir/ImageUser/$idUser/');
-          final file = File(join(myDir2.uri.path, '${imgName}.png'));
-
-          await file.exists().then((isThere) {
-            isThere ? print('exists') : print('non-existent');
-          });
-
-          Directory('dir/ImageUser/$idUser').createSync(recursive: true);
-
-          file.writeAsBytesSync(_bytesImage, mode: FileMode.append);
-
-          var dto = <User>[];
-
-          dto.add(User(Image_1: file.uri.toString()));
-
-          final jsonResponse = codec.encode(dto);
-
-          print('jsonResponse: ${jsonResponse.toString()}');
-          await request.response.write(jsonResponse.toString());
+          print('jsonResponse: ${a.toString()}');
+          await request.response.write(a.toString());
 
           await connection.close();
           break;

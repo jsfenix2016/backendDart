@@ -10,7 +10,7 @@ class ManagerImage {
   JsonCodec codec = JsonCodec();
 
   //Guardar imagen en un directorio especifico
-  Future<String> saveImage(MySqlConnection connection, Map data) async {
+  Future<String> saveImage(Map data) async {
     try {
       var imgName = data['imgName'];
       var typeImage = data['typeImage']; // pet or user
@@ -46,6 +46,22 @@ class ManagerImage {
       print(error.toString());
       return ('jsonResponse: $error');
     }
+  }
+
+  Future<String> searchImage(HttpRequest request) async {
+    var imgName = request.uri.queryParameters['imgName'];
+
+    final myDir = Directory(imgName);
+
+    request.response.headers.contentType = ContentType.parse('image/png');
+
+    var filet = await File(myDir.path);
+
+    final bytes = filet.readAsBytesSync();
+
+    var img64 = base64Encode(bytes);
+
+    return '${img64}';
   }
 }
 

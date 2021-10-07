@@ -72,6 +72,8 @@ class ManagerImage {
       //         'dir/ImageUser/slam-dunk-1993-1996-subbed-episodio-072.mp4');
 
       //     request.response.headers.contentType = ContentType.parse('video/mp4');
+ //     request.response.headers.contentType =
+      //         ContentType.parse('application/x-rar-compressed');
 
       //     var filet = await File(myDir.path);
       //     var fileStream = filet.openRead();

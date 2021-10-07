@@ -1,15 +1,32 @@
 import 'dart:convert';
 import 'package:mysql1/mysql1.dart';
+import 'package:pruebabackend/bin/user.dart';
 import 'package:pruebabackend/bin/userRegister.dart';
 
 JsonCodec codec = JsonCodec();
 
 class UserQuery {
-  Future<String> UserGet(MySqlConnection conection) async {
+  Future<String> UserGet(MySqlConnection conection, Map data) async {
     try {
-      var idUser = 50; // data['IdUser'];
+      var idUser = data['idUser'];
 
-      return ('jsonResponse: $idUser');
+      // code that might throw an exception
+      print('idUser: ${idUser}');
+
+      var a = await conection.query('CALL SP_consultUser($idUser)');
+
+      var dto = <User>[];
+      for (var row in a) {
+        print('Name: ${row[0]}');
+        idUser = row[0];
+        dto.add(User(IdUser: row[0], Email: row[1], Image_1: row[5]));
+      }
+
+      final jsonResponse = codec.encode(dto);
+
+      print('$jsonResponse');
+
+      return ('$jsonResponse');
     } catch (error) {
       print(error.toString());
       return ('jsonResponse: $error');

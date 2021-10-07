@@ -2,15 +2,15 @@ import 'dart:convert';
 import 'package:mysql1/mysql1.dart';
 import 'package:pruebabackend/bin/pet.dart';
 import 'package:pruebabackend/bin/pettype.dart';
+import 'package:pruebabackend/bin/race.dart';
 import 'package:pruebabackend/bin/user.dart';
 
 JsonCodec codec = JsonCodec();
 
 class PetQuery {
-  Future<String> AllPet(MySqlConnection conection) async {
+  Future<String> AllPet(MySqlConnection conection, Map data) async {
     try {
-      var idUser = 53;
-      // data['IdUser'];
+      var idUser = data['idUser'];
 
       var isAvailable = true;
       //data['IsAvailable'];
@@ -42,27 +42,28 @@ class PetQuery {
 
       final jsonResponse = codec.encode(dto);
 
-      return ('${jsonResponse}');
+      return ('${jsonResponse.toString()}');
     } catch (error) {
       print(error.toString());
       return ('jsonResponse: $error');
     }
   }
 
+//Falta terminar y probar
   Future<String> PetRacePost(MySqlConnection connection, Map data) async {
     try {
       var idType = data['idType'];
 
       var a = await connection.query('CALL SP_consultRace()');
 
-      var dto = <User>[];
+      var dto = <Race>[];
       for (var row in a) {
         idType = row[0];
-        dto.add(User(IdUser: row[0], Email: row[1], Image_1: row[5]));
+        dto.add(Race(IdPet: row[0], IdPettype: row[1], Name: row[2]));
       }
 
       final jsonResponse = codec.encode(dto);
-      return ('$jsonResponse');
+      return ('${jsonResponse.toString()}');
     } catch (error) {
       print(error.toString());
       return ('jsonResponse: $error');
@@ -92,7 +93,7 @@ class PetQuery {
       var isTrayed = data['istrayed'];
       var datew =
           "${birthDate.year.toString()}-${birthDate.month.toString().padLeft(2, '0')}-${birthDate.day.toString().padLeft(2, '0')}";
-      var parsedDate = DateTime.parse(datew);
+      //var parsedDate = DateTime.parse(datew);
       // producto.idUser = 50; //pref.idUser;
       // producto.name = "lilo";
       // producto.descMascota = "bueno";
@@ -116,7 +117,7 @@ class PetQuery {
       }
 
       final jsonResponse = codec.encode(idUserTemp);
-      return ('jsonResponse: $jsonResponse');
+      return ('jsonResponse: ${jsonResponse.toString()}');
     } catch (error) {
       print(error.toString());
       return ('jsonResponse: $error');
@@ -124,34 +125,39 @@ class PetQuery {
   }
 
   Future<String> PetUpdate(MySqlConnection connection, Map data) async {
-    var iduser = data['IdUser'];
-    var idPet = data['idPet'];
-    var namePet = data['NamePet'];
-    var birthDate = data['BirthDate'];
-    var idRace = data['IdRace'];
+    try {
+      var iduser = data['IdUser'];
+      var idPet = data['idPet'];
+      var namePet = data['NamePet'];
+      var birthDate = data['BirthDate'];
+      var idRace = data['IdRace'];
 
-    var image_1 = data['Image_1'];
-    var image_2 = data['Image_2'];
-    var image_3 = data['Image_3'];
-    var image_4 = data['Image_4'];
-    var idPettype = data['IdPettype'];
-    var description = data['Description'];
-    var genero = data['Genero'];
+      var image_1 = data['Image_1'];
+      var image_2 = data['Image_2'];
+      var image_3 = data['Image_3'];
+      var image_4 = data['Image_4'];
+      var idPettype = data['IdPettype'];
+      var description = data['Description'];
+      var genero = data['Genero'];
 
-    var isAvailable = data['IsAvailable'];
-    var isTrayed = data['IsTrayed'];
+      var isAvailable = data['IsAvailable'];
+      var isTrayed = data['IsTrayed'];
 
-    var petNew = await connection.query(
-        'CALL SP_UpdatePet("$iduser","$idPet", "$namePet", $birthDate, "$idRace", "$image_1", "$image_2", "$image_3", "$image_4", "$idPettype", "$description", "$genero", "$isAvailable", "$isTrayed")');
+      var petNew = await connection.query(
+          'CALL SP_UpdatePet("$iduser","$idPet", "$namePet", $birthDate, "$idRace", "$image_1", "$image_2", "$image_3", "$image_4", "$idPettype", "$description", "$genero", "$isAvailable", "$isTrayed")');
 
-    var idUser = -1;
+      var idUser = -1;
 
-    for (var row in petNew) {
-      idUser = row[0];
+      for (var row in petNew) {
+        idUser = row[0];
+      }
+
+      final jsonResponse = codec.encode(idUser);
+      return ('${jsonResponse.toString()}');
+    } catch (error) {
+      print(error.toString());
+      return ('jsonResponse: $error');
     }
-
-    final jsonResponse = codec.encode(idUser);
-    return ('$jsonResponse');
   }
 
   /*------   LIKE   -------*/
@@ -172,7 +178,7 @@ class PetQuery {
       // }
 
       final jsonResponse = codec.encode(dto);
-      return ('$jsonResponse');
+      return ('${jsonResponse.toString()}');
     } catch (error) {
       print(error.toString());
       return ('jsonResponse: $error');
@@ -207,7 +213,23 @@ class PetQuery {
 
       final jsonResponse = codec.encode(dto);
 
-      return ('${jsonResponse}');
+      return ('${jsonResponse.toString()}');
+    } catch (error) {
+      print(error.toString());
+      return ('jsonResponse: $error');
+    }
+  }
+
+  Future<String> DeletePet(MySqlConnection connection, Map data) async {
+    try {
+      //  var content = await utf8.decoder.bind(request).join(); /*2*/
+      //jsonDecode(content) as Map; /*3*/
+
+      var idPet = data['idPet'];
+
+      await connection.query('CALL SP_DeletePet("$idPet")');
+
+      return ('jsonResponse: ok');
     } catch (error) {
       print(error.toString());
       return ('jsonResponse: $error');

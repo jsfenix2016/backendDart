@@ -14,7 +14,7 @@ class Pet {
   final int IsAvailable;
   final String Genero;
   final int IsTrayed;
-
+  final int IdSize;
   Pet(
       {this.IdPet,
       this.IdUser,
@@ -29,7 +29,8 @@ class Pet {
       this.Description,
       this.IsAvailable,
       this.Genero,
-      this.IsTrayed});
+      this.IsTrayed,
+      this.IdSize});
 
   Pet.fromJson(Map<String, dynamic> json)
       : IdPet = json['idPet'],
@@ -45,7 +46,8 @@ class Pet {
         Description = json['description'],
         IsAvailable = json['isAvailable'],
         Genero = json['genero'],
-        IsTrayed = json['isTrayed'];
+        IsTrayed = json['isTrayed'],
+        IdSize = json['IdSize'];
 
   Map<String, dynamic> toJson() => {
         'idPet': IdPet,
@@ -61,6 +63,7 @@ class Pet {
         'description': Description,
         'isAvailable': IsAvailable,
         'genero': Genero,
-        'isTrayed': IsTrayed
+        'isTrayed': IsTrayed,
+        'IdSize': IdSize
       };
 }

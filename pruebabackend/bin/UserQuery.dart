@@ -1,4 +1,5 @@
 import 'dart:convert';
+// import 'dart:html';
 import 'package:mysql1/mysql1.dart';
 import 'package:pruebabackend/bin/user.dart';
 import 'package:pruebabackend/bin/userRegister.dart';
@@ -38,13 +39,13 @@ class UserQuery {
       var user = data['email'];
       var pass = data['pass'];
       var terms = data['terms'];
-      var imgDir = data['image_1'];
+      // var imgDir = data['image_1'];
 
       // code that might throw an exception
       print('Name: ${user}, email: ${pass}, terms: ${terms}');
 
       await connection
-          .query('CALL SP_InsertRegister("$user", "$pass", $terms, "$imgDir")');
+          .query('CALL SP_InsertRegister("$user", "$pass", $terms)');
 
       var consultNewReg =
           await connection.query('CALL consultaRegistro("$user")');
@@ -78,17 +79,18 @@ class UserQuery {
       var getRequest =
           await connection.query('CALL SP_validateUser("$user", "$pass")');
 
-      var dto = <UserRegister>[];
-
+      // var dto = <UserRegister>[];
+      var userR;
       for (var row in getRequest) {
         print('email: ${row[1]}, pass: ${row[2]}, terms: ${row[3]}');
-        dto.add(UserRegister(IdUser: row[0], Email: row[1]));
+        // dto.add(UserRegister(IdUser: row[0], Email: row[1]));
+        userR = UserRegister(IdUser: row[0], Email: row[1]);
       }
 
-      final jsonResponse = codec.encode(dto);
+      final jsonResponse = codec.encode(userR);
 
       print('jsonResponse: ${jsonResponse.toString()}');
-      return jsonResponse;
+      return ('$jsonResponse');
     } catch (error) {
       print(error.toString());
       return error.toString();
@@ -107,13 +109,14 @@ class UserQuery {
           await connection.query('CALL SP_validateUser("$user", "$pass")');
 
       var dto = <UserRegister>[];
-
+      var userR;
       for (var row in getRequest) {
         print('email: ${row[1]}, pass: ${row[2]}, terms: ${row[3]}');
         dto.add(UserRegister(IdUser: row[0], Email: row[1]));
+        userR = UserRegister(IdUser: row[0], Email: row[1]);
       }
 
-      final jsonResponse = codec.encode(dto);
+      final jsonResponse = codec.encode(userR);
 
       print('jsonResponse: ${jsonResponse.toString()}');
       return jsonResponse;

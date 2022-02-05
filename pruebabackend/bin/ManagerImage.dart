@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-
-import 'package:mysql1/mysql1.dart';
 import 'package:path/path.dart';
 import 'package:pruebabackend/bin/user.dart';
 
@@ -62,6 +60,23 @@ class ManagerImage {
     var img64 = base64Encode(bytes);
 
     return '${img64}';
+  }
+
+//----- Hay que probar aun ----//
+  Future<String> DeleteImage(HttpRequest request) async {
+    var imgName = request.uri.queryParameters['imgName'];
+
+    final myDir = Directory(imgName);
+
+    request.response.headers.contentType = ContentType.parse('image/png');
+
+    var filet = await File(myDir.path);
+
+    final bytes = filet.delete();
+
+    // var img64 = base64Encode(bytes);
+
+    return '${bytes}';
   }
 }
 

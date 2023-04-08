@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:mysql1/mysql1.dart';
 // import 'package:socket_io/socket_io.dart';
@@ -9,6 +10,11 @@ import 'LostPet.dart';
 import 'ManagerImage.dart';
 import 'PetQuery.dart';
 import 'UserQuery.dart';
+import 'package:shelf/shelf_io.dart' as shelf_io;
+import 'package:shelf_web_socket/shelf_web_socket.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
+
+import 'lostPetStreet.dart';
 
 JsonCodec codec = JsonCodec();
 var connection;
@@ -16,19 +22,9 @@ var connection;
 void handleWebSocket(WebSocket socket) {
   print('Client connected!');
 
-  socket.listen(
-    (event) {
-      socket.add('que tal : $event');
-    },
-    onDone: () => print('Client disconnected'),
-  );
-
-  // socket.listen((String s) {
-  //   print('Client sent: $s');
-  //   socket.add('echo: $s');
-  // }, onDone: () {
-  //   print('Client disconnected');
-  // });
+  // socket.listen((event) {
+  //   socket.add('que tal : $event');
+  // }, onDone: () => print('Client disconnected'));
 }
 
 void serveRequest(HttpRequest request) async {
@@ -227,10 +223,37 @@ void serveRequest(HttpRequest request) async {
   // await request.response.close();
 }
 
+var handler = webSocketHandler((webSocket) {
+  webSocket.stream.listen((message) {
+    webSocket.sink.add("echo $message");
+  });
+});
+
+List<WebSocket> connections;
+
+handleWS(InternetAddress clientAddress) {
+  return (WebSocket ws) {
+    connections.add(ws);
+    print(
+        'Client $clientAddress connected, there are now ${connections.length} client(s) connected.');
+  };
+}
+
+void handleConnection(Socket client) {
+  print('Connection from'
+      ' ${client.remoteAddress.address}:${client.remotePort}');
+}
+
 Future main() async {
   var server = await HttpServer.bind(InternetAddress.loopbackIPv4, 8088);
+  // final servers = await ServerSocket.bind(InternetAddress.anyIPv4, 4567);
 
-  print('Serving at ${server.address}:${server.port}');
+  // listen for clent connections to the server
+  // servers.listen((client) {
+  //   handleConnection(client);
+  // });
+  // connections = [];
+  // print('Serving at ${server.address}:${server.port}');
   // hs256();
   server.listen((HttpRequest request) async {
     connection = await MySqlConnection.connect(ConnectionSettings(
@@ -241,8 +264,37 @@ Future main() async {
       db: 'bdPestNewVersion',
     ));
 
+    // RawDatagramSocket.bind(InternetAddress.loopbackIPv4, 4444)
+    //     .then((RawDatagramSocket socket) {
+    //   print('UDP Echo ready to receive');
+    //   print('${socket.address.address}:${socket.port}');
+    //   socket.listen((RawSocketEvent e) {
+    //     Datagram d = socket.receive();
+    //     if (d == null) return;
+
+    //     String message = new String.fromCharCodes(d.data);
+    //     print(
+    //         'Datagram from ${d.address.address}:${d.port}: ${message.trim()}');
+
+    //     socket.send(message.codeUnits, d.address, d.port);
+    //   });
+    // });
+
+    // shelf_io.serve(handler, 'localhost', 8889).then((server) {
+    //   print('Serving at ws://${server.address.host}:${server.port}');
+    // });
+
     if (WebSocketTransformer.isUpgradeRequest(request)) {
-      WebSocketTransformer.upgrade(request).then(handleWebSocket);
+      WebSocket socket = await WebSocketTransformer.upgrade(request);
+      socket.listen((data) {
+        print(
+            "from IP ${request.connectionInfo.remoteAddress.address}:${data}");
+
+        socket.add('que tal : $data');
+        // socket.close();
+      });
+
+      return;
     } else {
       print("Regular ${request.method} request for: ${request.uri.path}");
       if (request.uri.path != '/imageSa') {
@@ -253,16 +305,38 @@ Future main() async {
     switch (request.uri.path) {
       case '/chat':
         break;
+      case '/imagePetsStreet':
+        if (request.method == 'GET') {
+          try {
+            var img = await LostPetStreetQuery().AllLostPetStreet();
+            // print('jsonResponse: ${img.toString()}');
+            // await request.response.write(img.toString());
+            // await connection.close();
+            requestAndClose(request, img, "");
+          } catch (error) {
+            print(error.toString());
+            // await request.response.write('jsonResponse: $error');
+            // await connection.close();
+            requestAndClose(request, "", 'jsonResponse: $error');
+          }
+          break;
+        }
+
+        break;
+
       case '/imageSa':
         if (request.method == 'GET') {
           try {
             var img = await ManagerImage().searchImage(request);
-            print('jsonResponse: ${img.toString()}');
-            await request.response.write(img.toString());
-            await connection.close();
+            // print('jsonResponse: ${img.toString()}');
+            // await request.response.write(img.toString());
+            // await connection.close();
+            requestAndClose(request, img, "");
           } catch (error) {
             print(error.toString());
-            await request.response.write('jsonResponse: $error');
+            // await request.response.write('jsonResponse: $error');
+            // await connection.close();
+            requestAndClose(request, "", 'jsonResponse: $error');
           }
           break;
         }
@@ -272,13 +346,15 @@ Future main() async {
             var data = await methodData(request);
             var a = await ManagerImage().saveImage(data);
 
-            print('jsonResponse: ${a.toString()}');
-            await request.response.write(a.toString());
-
+            // print('jsonResponse: ${a.toString()}');
+            // await request.response.write(a.toString());
+            requestAndClose(request, a, '');
             await connection.close();
           } catch (error) {
             print(error.toString());
-            await request.response.write('jsonResponse: $error');
+            // await request.response.write('jsonResponse: $error');
+            // await connection.close();
+            requestAndClose(request, "", 'jsonResponse: $error');
           }
           break;
         }
@@ -290,15 +366,14 @@ Future main() async {
             var data = await methodData(request);
 
             var responseLogin = await UserQuery().Login(connection, data);
-            // var escapedString = jsonDecode(responseLogin.toString());
-            // var encoded = utf8.encode(responseLogin.toString());
 
-            await request.response.write(responseLogin);
+            requestAndClose(request, responseLogin, '');
           } catch (error) {
             print(error.toString());
-            await request.response.write('jsonResponse: $error');
+
+            requestAndClose(request, "", 'jsonResponse: $error');
           }
-          await connection.close();
+
           break;
         }
 
@@ -306,17 +381,18 @@ Future main() async {
 
       case '/registro':
         if (request.method == 'GET') {
-          // var a = await connection.query('CALL SP_consultRegister()');
+          var a = await connection.query('CALL SP_consultRegister()');
+          requestAndClose(request, a.toString(), '');
         } else if (request.method == 'POST') {
           try {
             var data = await methodData(request);
             var req = await UserQuery().Register(connection, data);
 
-            await request.response.write(req.toString());
-            await connection.close();
+            requestAndClose(request, req.toString(), '');
           } catch (error) {
             print(error.toString());
-            await request.response.write('jsonResponse: $error');
+
+            requestAndClose(request, "", 'jsonResponse: $error');
           }
           break;
         } else if (request.method == 'PUT') {}
@@ -330,13 +406,12 @@ Future main() async {
             var data = await methodData(request);
             var req = await UserQuery().UserGet(connection, data);
 
-            await request.response.write('$req');
+            requestAndClose(request, req, '');
           } catch (error) {
             print(error.toString());
-            await request.response.write('jsonResponse: $error');
-          }
 
-          await connection.close();
+            requestAndClose(request, "", 'jsonResponse: $error');
+          }
         }
         break;
 
@@ -345,15 +420,13 @@ Future main() async {
         if (request.method == 'GET') {
         } else if (request.method == 'POST') {
           try {
-            // var data = await methodData(request);
-            var a = await user.PetRacePost(connection);
+            var race = await user.PetRacePost(connection);
 
-            //final jsonResponse = codec.encode(a);
-
-            await request.response.write('$a');
+            requestAndClose(request, race, '');
           } catch (error) {
             print(error.toString());
-            await request.response.write('jsonResponse: $error');
+
+            requestAndClose(request, "", 'jsonResponse: $error');
           }
         } else if (request.method == 'PUT') {}
         break;
@@ -364,12 +437,13 @@ Future main() async {
         } else if (request.method == 'POST') {
           try {
             var data = await methodData(request);
-            var a = await pet.AllPet(connection, data);
-            await request.response.write('$a');
-            await connection.close();
+            var allPet = await pet.AllPet(connection, data);
+
+            requestAndClose(request, allPet, '');
           } catch (error) {
             print(error.toString());
-            await request.response.write('jsonResponse: $error');
+
+            requestAndClose(request, "", 'jsonResponse: $error');
           }
         } else if (request.method == 'PUT') {}
         break;
@@ -379,54 +453,52 @@ Future main() async {
         } else if (request.method == 'POST') {
           try {
             var data = await methodData(request);
-            var a = await pet.PetSave(connection, data);
-            await request.response.write('$a');
+            var pets = await pet.PetSave(connection, data);
 
-            await connection.close();
+            requestAndClose(request, pets, '');
           } catch (error) {
             print(error.toString());
-            await request.response.write('jsonResponse: $error');
+
+            requestAndClose(request, "", 'jsonResponse: $error');
           }
         } else if (request.method == 'PUT') {
           try {
             var data = await methodData(request);
             var req = await pet.PetUpdate(connection, data);
 
-            await request.response.write('$req');
+            requestAndClose(request, req, '');
           } catch (error) {
             print(error.toString());
-            await request.response.write('jsonResponse: $error');
-          }
 
-          await connection.close();
+            requestAndClose(request, "", 'jsonResponse: $error');
+          }
         } else if (request.method == 'DELETE') {
           try {
             var data = await methodData(request);
             var req = await pet.DeletePet(connection, data);
 
-            await request.response.write('$req');
+            requestAndClose(request, req, '');
           } catch (error) {
             print(error.toString());
-            await request.response.write('jsonResponse: $error');
-          }
 
-          await connection.close();
+            requestAndClose(request, "", 'jsonResponse: $error');
+          }
         }
         break;
       case '/allMyPets':
         var pet = PetQuery();
-        if (request.method == 'GET') {
-        } else if (request.method == 'POST') {
+        if (request.method == 'POST') {
           try {
             var data = await methodData(request);
-            var a = await pet.AllMyPet(connection, data);
-            await request.response.write('$a');
+            var myPets = await pet.AllMyPet(connection, data);
 
-            await connection.close();
+            requestAndClose(request, myPets, '');
           } catch (error) {
             print(error.toString());
-            await request.response.write('jsonResponse: $error');
+
+            requestAndClose(request, "", 'jsonResponse: $error');
           }
+        } else if (request.method == 'POST') {
         } else if (request.method == 'PUT') {}
         break;
       case '/consultLostPets':
@@ -434,17 +506,40 @@ Future main() async {
           try {
             var req = await LostPetQuery().AllLostPet(connection);
 
-            await request.response.write('$req');
+            requestAndClose(request, req, '');
           } catch (error) {
             print(error.toString());
-            await request.response.write('jsonResponse: $error');
+
+            requestAndClose(request, "", 'jsonResponse: $error');
+          }
+        } else if (request.method == 'POST') {}
+        break;
+      case '/allLikes':
+        var pet = PetQuery();
+        if (request.method == 'POST') {
+          try {
+            var data = await methodData(request);
+
+            var responseLogin = await pet.AllPetLike(connection, data);
+
+            requestAndClose(request, responseLogin, '');
+          } catch (error) {
+            print(error.toString());
+
+            requestAndClose(request, "", 'jsonResponse: $error');
           }
 
-          await connection.close();
-        } else if (request.method == 'POST') {}
+          break;
+        }
+
         break;
       case '/consult':
         if (request.method == 'GET') {
+          List<int> numbers = generateNumbers();
+          print(numbers);
+          List<int> numbersSpecial = generateNumbersSpecial();
+          requestAndClose(request,
+              '${numbers.toString()} + ${numbersSpecial.toString()}', '');
         } else if (request.method == 'POST') {
         } else if (request.method == 'PUT') {}
         break;
@@ -457,6 +552,28 @@ Future main() async {
     }
     await request.response.close();
   });
+}
+
+List<int> generateNumbers() {
+  // Create a list of numbers from 1 to 50
+  List<int> numbers = List.generate(50, (index) => index + 1);
+
+  // Shuffle the list of numbers
+  numbers.shuffle();
+
+  // Return the first 5 numbers in the shuffled list
+  return numbers.sublist(0, 5);
+}
+
+List<int> generateNumbersSpecial() {
+  // Create a list of numbers from 1 to 50
+  List<int> numbers = List.generate(12, (index) => index + 1);
+
+  // Shuffle the list of numbers
+  numbers.shuffle();
+
+  // Return the first 5 numbers in the shuffled list
+  return numbers.sublist(0, 2);
 }
 
 // HMAC SHA-256 algorithm
@@ -493,6 +610,16 @@ void hs256() {
     } on JWTError catch (ex) {
       print(ex.message); // ex: invalid signature
     }
+  }
+}
+
+Future requestAndClose(HttpRequest request, String json, String error) async {
+  if (error != "") {
+    await request.response.write('jsonResponse: $error');
+    await connection.close();
+  } else {
+    await request.response.write('$json');
+    await connection.close();
   }
 }
 
@@ -534,24 +661,24 @@ Future<List<FileSystemEntity>> dirContents(Directory dir) {
 //         break;
 
 // case '/dateTime':
-      //   if (request.method == 'GET') {
-      //     var now = DateTime.now().toLocal();
-      //     var isAlgo = true;
-      //     var datew =
-      //         "${now.year.toString()}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+//   if (request.method == 'GET') {
+//     var now = DateTime.now().toLocal();
+//     var isAlgo = true;
+//     var datew =
+//         "${now.year.toString()}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
 
-      //     var parsedDate = DateTime.parse(datew);
+//     var parsedDate = DateTime.parse(datew);
 
-      //     try {
-      //       var petNew = await connection
-      //           .query('CALL SP_insertDateTime( "$now", $isAlgo)');
+//     try {
+//       var petNew = await connection
+//           .query('CALL SP_insertDateTime( "$now", $isAlgo)');
 
-      //       await request.response.write('jsonResponse: ok');
-      //     } catch (error) {
-      //       print(error.toString());
-      //       await request.response.write('jsonResponse: $error');
-      //     }
+//       await request.response.write('jsonResponse: ok');
+//     } catch (error) {
+//       print(error.toString());
+//       await request.response.write('jsonResponse: $error');
+//     }
 
-      //     await connection.close();
-      //   }
-      //   break;
+//     await connection.close();
+//   }
+//   break;

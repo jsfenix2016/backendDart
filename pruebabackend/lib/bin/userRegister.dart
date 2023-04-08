@@ -1,21 +1,21 @@
 class UserRegister {
-  final int IdUser;
+  final String IdUser;
   final String Email;
-  final bool Terms;
+  final String Terms;
+  final String dateRegister;
 
-  UserRegister(
-      {this.IdUser,
-      this.Email,
-      this.Terms});
+  UserRegister({this.IdUser, this.Email, this.Terms, this.dateRegister});
 
   UserRegister.fromJson(Map<dynamic, dynamic> json)
       : IdUser = json['id'],
         Email = json['email'],
-        Terms = json['terms'];
+        Terms = json['terms'],
+        dateRegister = json['dateRegister'];
 
   Map<String, dynamic> toJson() => {
         'id': IdUser,
         'email': Email,
         'terms': Terms,
+        'dateRegister': dateRegister
       };
 }

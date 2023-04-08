@@ -36,19 +36,15 @@ class UserQuery {
 
   Future<String> Register(MySqlConnection connection, Map data) async {
     try {
-      var user = data['email'];
-      var pass = data['pass'];
-      var terms = data['terms'];
-      // var imgDir = data['image_1'];
-
-      // code that might throw an exception
-      print('Name: ${user}, email: ${pass}, terms: ${terms}');
+      final user = data['email'];
+      final pass = data['pass'];
+      final terms = data['terms'];
 
       await connection
-          .query('CALL SP_InsertRegister("$user", "$pass", $terms)');
+          .query('CALL SP_InsertRegister(?, ?, ?)', [user, pass, terms]);
 
       var consultNewReg =
-          await connection.query('CALL consultaRegistro("$user")');
+          await connection.query('CALL consultaRegistro(?)', [user]);
 
       var idUser = -1;
 
@@ -84,7 +80,11 @@ class UserQuery {
       for (var row in getRequest) {
         print('email: ${row[1]}, pass: ${row[2]}, terms: ${row[3]}');
         // dto.add(UserRegister(IdUser: row[0], Email: row[1]));
-        userR = UserRegister(IdUser: row[0], Email: row[1]);
+        userR = UserRegister(
+            IdUser: '${row[0]}',
+            Email: '${row[1]}',
+            Terms: '${row[3]}',
+            dateRegister: '${row[4]}');
       }
 
       final jsonResponse = codec.encode(userR);

@@ -132,19 +132,7 @@ class PetQuery {
 
       var datew =
           "${birthDate.year.toString()}-${birthDate.month.toString().padLeft(2, '0')}-${birthDate.day.toString().padLeft(2, '0')}";
-      //var parsedDate = DateTime.parse(datew);
-      // producto.idUser = 50; //pref.idUser;
-      // producto.name = "lilo";
-      // producto.descMascota = "bueno";
-      // producto.idRaza = 1;
 
-      // producto.disponible = true;
-      // producto.idEspecie = 1;
-      // producto.tamano = "pequeño";
-      // producto.genero = "macho";
-
-      // producto.enfermedad = false;
-      // producto.pedigree = true;
       print(datew);
       var petNew = await connection.query(
           'CALL SP_InsertPet($idUser, "$name", "$datew", $idRace, "$image_1", "$image_2", "$image_3", "$image_4", $idPettype, "$description", $isAvailable, "$genero", $isTrayed, $idSize)');
@@ -200,13 +188,15 @@ class PetQuery {
   /*------   LIKE   -------*/
   Future<String> PetSaveLike(MySqlConnection connection, Map data) async {
     try {
-      // var idUser = data['idUser'];
-      // var idPet = data['idPet'];
-      // // var idOtherPet = data['idOtherPet'];
-      // var matchUser = data['matchUser'];
+      var idUser = data['idUser'];
+      var idOtherUser = data['idOtherUser'];
 
-      // var save = await connection
-      //     .query('CALL SP_InsertLike($idUser, $idPet,$matchUser)');
+      var idPet = data['idPet'];
+      var idOtherPet = data['idOtherPet'];
+      var matchUser = data['matchUser'];
+
+      var save = await connection.query(
+          'CALL SP_InsertLike($idUser,$idOtherUser, $idPet,$idOtherPet,$matchUser)');
 
       var dto = <User>[];
       // for (var row in a) {
